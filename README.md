@@ -1,8 +1,8 @@
 # Overview  
 This project is supposed to be updating score from the games on either FB group
 posts or in a Whatsapp Group conversation  
-
---
+  
+[OpenCV](https://www.pyimagesearch.com/2017/09/04/raspbian-stretch-install-opencv-3-python-on-your-raspberry-pi/)  
 
 ## Modules to do  
 * Photo OCR, recognize the score
@@ -12,8 +12,6 @@ posts or in a Whatsapp Group conversation
 * Score updater to FB/Whatsapp
 * Parsing archive photos in case we lost connection and updating that to the
   posts as well
-
---
 
 ## Webinterface to do:  
 * See the live stream till the moment we start taking pictures of the score
