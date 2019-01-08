@@ -1,4 +1,5 @@
 # USAGE
+# python3 src/ocr_template_match.py --image samples/2.JPG --reference_dir references
 # python ocr_template_match.py --image images/credit_card_01.png --reference ocr_a_reference.png
 
 # import the necessary packages
@@ -131,19 +132,19 @@ for (i, (x, y, w, h)) in enumerate(img.locs):
     roi = cv2.resize(roi, (roi_width, roi_height))
     
     # initialize a list of template matching scores	
-    scores = {}
+    scores_dict = {}
     
     # loop over the reference digit name and digit ROI
     for (digit, digit_obj) in digits.items():
     	# apply correlation-based template matching, take the
     	# score, and update the scores list
         digit_obj.compare_against_roi(roi)
-        scores[digit] = digit_obj.get_best_score()
+        scores_dict[digit] = digit_obj.get_best_score()
+    digit = max(scores_dict, key=scores_dict.get)
     # the classification for the digit ROI will be the reference
     # digit name with the *largest* template matching score
-    digit = np.argmax(scores)
-    #if np.max(scores) < 36000000.0:
-    #    continue
+    if scores_dict[digit] < 36000000.0:
+        continue
     output.append(str(digit))
     
     # draw the digit classifications around the group
