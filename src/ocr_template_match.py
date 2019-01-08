@@ -38,7 +38,6 @@ digits = {}
 digit_map = {0:0, 1:1, 2:2, 3:4, 4:7, 5:9, 6:1, 7:1, 8:2, 9:4, 10:7,
         11:0, 12:9}
 
-
 # loop over the OCR-A reference contours
 for (i, c) in enumerate(refCnts):
     # compute the bounding box for the digit, extract it, and resize
@@ -113,7 +112,6 @@ for (i, (x, y, w, h)) in enumerate(locs):
     		cv2.TM_CCOEFF)
     	(_, score, _, _) = cv2.minMaxLoc(result)
     	scores.append(score)
-    print(scores)
     
     # the classification for the digit ROI will be the reference
     # digit name with the *largest* template matching score
