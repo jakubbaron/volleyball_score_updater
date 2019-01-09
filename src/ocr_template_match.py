@@ -98,7 +98,7 @@ class DigitTemplate:
     def get_best_score(self):
         return np.max(self.get_scores())
     def get_avg(self):
-        return np.avg(self.get_scores())
+        return np.mean(self.get_scores())
 
 def init_digit_references(args):
     digits = {}
@@ -121,18 +121,22 @@ def match_digits_with_img(digits, img):
         
         # initialize a list of template matching scores	
         scores_dict = {}
+        avg_dict = {}
         
         # loop over the reference digit name and digit ROI
         for (digit, digit_obj) in digits.items():
         	# apply correlation-based template matching, take the
         	# score, and update the scores list
             digit_obj.compare_against_roi(roi)
-            scores_dict[digit] = digit_obj.get_best_score()
-        digit = max(scores_dict, key=scores_dict.get)
+            scores_dict[digit] = digit_obj.get_best_score()/1000000.0
+            avg_dict[digit] =  digit_obj.get_avg()/1000000.0
+        digit = max(avg_dict, key=avg_dict.get)
         # the classification for the digit ROI will be the reference
         # digit name with the *largest* template matching score
-        if scores_dict[digit] < 36000000.0:
+        if avg_dict[digit] < 30.0:
             continue
+        print(digit, avg_dict)
+        print(digit, scores_dict)
         output.append(str(digit))
         
         # draw the digit classifications around the group
