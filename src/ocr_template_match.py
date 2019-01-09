@@ -1,6 +1,5 @@
 # USAGE
 # python3 src/ocr_template_match.py --image samples/2.JPG --reference_dir references
-# python ocr_template_match.py --image images/credit_card_01.png --reference ocr_a_reference.png
 
 # import the necessary packages
 from imutils import contours
@@ -101,57 +100,69 @@ class DigitTemplate:
     def get_avg(self):
         return np.avg(self.get_scores())
 
-# construct the argument parse and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-i", "--image", required=True,
-	help="path to input image")
-ap.add_argument("-r", "--reference_dir", required=True,
-	help="path to reference dir with images per each digit (0-9)")
-ap.add_argument("-e", "--extension", required=False, default="PNG",
-        help="Extension of the file referneces")
-args = vars(ap.parse_args())
-
-digits = {}
-
-for digit in range(0,10):
-    filepath = args["reference_dir"] + "/" + str(digit) + "." + args["extension"]
-    if not os.path.isfile(filepath):
-        continue
-    digits[digit] = DigitTemplate(filepath, digit)
-
-# load the input image, resize it, and convert it to grayscale
-img = Image(args["image"])
-
-output = []
-
-for (i, (x, y, w, h)) in enumerate(img.locs):
-    # loop over the digit contours
-    # resize it to have the same fixed size as
-    # the reference OCR-A images
-    roi = img.thresh[y:y + h, x:x + w]
-    roi = cv2.resize(roi, (roi_width, roi_height))
+def init_digit_references(args):
+    digits = {}
     
-    # initialize a list of template matching scores	
-    scores_dict = {}
+    for digit in range(0,10):
+        filepath = args["reference_dir"] + "/" + str(digit) + "." + args["extension"]
+        if not os.path.isfile(filepath):
+            continue
+        digits[digit] = DigitTemplate(filepath, digit)
+    return digits
+
+def match_digits_with_img(digits, img):
+    output = []
+    for (i, (x, y, w, h)) in enumerate(img.locs):
+        # loop over the digit contours
+        # resize it to have the same fixed size as
+        # the reference OCR-A images
+        roi = img.thresh[y:y + h, x:x + w]
+        roi = cv2.resize(roi, (roi_width, roi_height))
+        
+        # initialize a list of template matching scores	
+        scores_dict = {}
+        
+        # loop over the reference digit name and digit ROI
+        for (digit, digit_obj) in digits.items():
+        	# apply correlation-based template matching, take the
+        	# score, and update the scores list
+            digit_obj.compare_against_roi(roi)
+            scores_dict[digit] = digit_obj.get_best_score()
+        digit = max(scores_dict, key=scores_dict.get)
+        # the classification for the digit ROI will be the reference
+        # digit name with the *largest* template matching score
+        if scores_dict[digit] < 36000000.0:
+            continue
+        output.append(str(digit))
+        
+        # draw the digit classifications around the group
+        img.draw_on_original(x, y, w, h, digit)
+    return output
+     
+
+
+def main():
+    # construct the argument parse and parse the arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-i", "--image", required=True,
+    	help="path to input image")
+    ap.add_argument("-r", "--reference_dir", required=True,
+    	help="path to reference dir with images per each digit (0-9)")
+    ap.add_argument("-e", "--extension", required=False, default="PNG",
+            help="Extension of the file referneces")
+    args = vars(ap.parse_args())
     
-    # loop over the reference digit name and digit ROI
-    for (digit, digit_obj) in digits.items():
-    	# apply correlation-based template matching, take the
-    	# score, and update the scores list
-        digit_obj.compare_against_roi(roi)
-        scores_dict[digit] = digit_obj.get_best_score()
-    digit = max(scores_dict, key=scores_dict.get)
-    # the classification for the digit ROI will be the reference
-    # digit name with the *largest* template matching score
-    if scores_dict[digit] < 36000000.0:
-        continue
-    output.append(str(digit))
+    digits = init_digit_references(args)
+    # load the input image
+    img = Image(args["image"])
     
-    # draw the digit classifications around the group
-    img.draw_on_original(x, y, w, h, digit)
- 
-# display the output credit card information to the screen
-print(output)
-print("Read Numbers: {}".format("".join(output)))
-cv2.imshow("Image", img.orig_image)
-cv2.waitKey(0)
+    output = match_digits_with_img(digits, img)
+
+    # display the output of the volleyball score board
+    print("Read Numbers: {}".format("".join(output)))
+    cv2.imshow("Image", img.orig_image)
+    cv2.waitKey(0)
+
+if __name__ == "__main__":
+    main()
+
