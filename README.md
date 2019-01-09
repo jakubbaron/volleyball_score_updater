@@ -12,6 +12,7 @@ posts or in a Whatsapp Group conversation
 * Score updater to FB/Whatsapp
 * Parsing archive photos in case we lost connection and updating that to the
   posts as well
+* Unit tests
 
 ## Webinterface to do:  
 * See the live stream till the moment we start taking pictures of the score,
