@@ -57,36 +57,41 @@ class Image:
 
 
 class DigitTemplate:
-    def __init__(self, filepath, digit):
-        self.filepath = filepath
+    def __init__(self, filespath, digit):
+        self.filespath = filespath
         self.digit = digit
+        self.templates = []
 
-        self.ref = cv2.imread(self.filepath)
-        self.ref = cv2.cvtColor(self.ref, cv2.COLOR_BGR2GRAY)
-        self.ref = cv2.threshold(self.ref, 150, 255, cv2.THRESH_BINARY_INV)[1]
+        for i in range(1, 10):
+            filename = self.filespath + "/" + str(self.digit) + "/" + str(self.digit) + "_" + str(i) + ".png"
+            if not os.path.isfile(filename):
+                break
+            ref = cv2.imread(filename)
+            ref = cv2.cvtColor(ref, cv2.COLOR_BGR2GRAY)
+            ref = cv2.threshold(ref, 150, 255, cv2.THRESH_BINARY_INV)[1]
 
-        self.refCnts = cv2.findContours(self.ref.copy(), cv2.RETR_EXTERNAL,
-        	        cv2.CHAIN_APPROX_SIMPLE)
-        self.refCnts = self.refCnts[0]
-        self.refCnts = contours.sort_contours(self.refCnts, method="left-to-right")[0]
-        self.templates= {}
-        # loop over the OCR-A reference contours
-        for (i, c) in enumerate(self.refCnts):
-            # compute the bounding box for the digit, extract it, and resize
-            # it to a fixed size
-            (x, y, w, h) = cv2.boundingRect(c)
-            roi = self.ref[y:y + h, x:x + w]
-            roi = cv2.resize(roi, (roi_width, roi_height))
-            
-            # update the references dictionary/ TODO should be prob just
-            # changed to and array
-            self.templates[i] = roi
+            refCnts = cv2.findContours(ref.copy(), cv2.RETR_EXTERNAL,
+            	        cv2.CHAIN_APPROX_SIMPLE)
+            refCnts = refCnts[0]
+            refCnts = contours.sort_contours(refCnts, method="left-to-right")[0]
+            # loop over the OCR-A reference contours
+            for c in refCnts:
+                # compute the bounding box for the digit, extract it, and resize
+                # it to a fixed size
+                (x, y, w, h) = cv2.boundingRect(c)
+                roi = ref[y:y + h, x:x + w]
+                roi = cv2.resize(roi, (roi_width, roi_height))
+                
+                # update the references dictionary/ TODO should be prob just
+                # changed to and array
+                self.templates.append(roi)
+        print("Created " + str(len(self.templates)) + " for digit " + str(self.digit))
 
     def compare_against_roi(self, roi):
         # initialize a list of template matching scores	
         self.scores = []
         # loop over the reference digit name and digit ROI
-        for (which, template) in self.templates.items():
+        for template in self.templates:
         	# apply correlation-based template matching, take the
         	# score, and update the scores list
         	result = cv2.matchTemplate(roi, template, cv2.TM_CCOEFF)
@@ -104,9 +109,7 @@ def init_digit_references(args):
     digits = {}
     
     for digit in range(0,10):
-        filepath = args["reference_dir"] + "/" + str(digit) + "." + args["extension"]
-        if not os.path.isfile(filepath):
-            continue
+        filepath = args["reference_dir"]
         digits[digit] = DigitTemplate(filepath, digit)
     return digits
 
@@ -131,13 +134,16 @@ def match_digits_with_img(digits, img):
             scores_dict[digit] = digit_obj.get_best_score()/1000000.0
             avg_dict[digit] =  digit_obj.get_avg()/1000000.0
         digit = max(avg_dict, key=avg_dict.get)
+        score_digit = max(scores_dict, key=scores_dict.get)
         # the classification for the digit ROI will be the reference
         # digit name with the *largest* template matching score
-        if avg_dict[digit] < 30.0:
+        if scores_dict[score_digit] < 40.0:
+            continue
+        if avg_dict[score_digit] < 10.0:
             continue
         print(digit, avg_dict)
-        print(digit, scores_dict)
-        output.append(str(digit))
+        print(score_digit, scores_dict)
+        output.append(str(score_digit))
         
         # draw the digit classifications around the group
         img.draw_on_original(x, y, w, h, digit)
