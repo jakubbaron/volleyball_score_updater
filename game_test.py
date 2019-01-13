@@ -12,8 +12,7 @@ class TestReadingValidation(unittest.TestCase):
         The actual test.
         Any method which starts with ``test_`` will considered as a test case.
         """
-        res = validate_reading("abc")
-        self.assertEqual(res, "abc")
+        self.assertEqual(validate_reading("abc"), "abc")
 
 
 if __name__ == '__main__':
