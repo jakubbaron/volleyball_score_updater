@@ -109,6 +109,7 @@ def init_digit_references(args):
     digits = {}
     
     for digit in range(0,10):
+    #for digit in range(0,10):
         filepath = args["reference_dir"]
         digits[digit] = DigitTemplate(filepath, digit)
     return digits
@@ -146,10 +147,9 @@ def match_digits_with_img(digits, img):
         output.append(str(score_digit))
         
         # draw the digit classifications around the group
-        img.draw_on_original(x, y, w, h, digit)
+        img.draw_on_original(x, y, w, h, score_digit)
     return output
      
-
 
 def main():
     # construct the argument parse and parse the arguments
