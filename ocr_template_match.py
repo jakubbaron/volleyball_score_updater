@@ -18,8 +18,6 @@ class Image:
         self.image = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
         self.orig_image = cv2.imread(filepath)
         (self.thresh, self.im_bw) = cv2.threshold(self.image, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-        # cv2.imshow("thresh", im_bw)
-        # cv2.waitKey(0)
         self.thresh = 143
         self.im_binary = cv2.threshold(self.im_bw, self.thresh, 255, cv2.THRESH_BINARY)[1]
         self.image = self.resize(self.im_binary)
@@ -32,13 +30,14 @@ class Image:
                cv2.CHAIN_APPROX_SIMPLE)
         cnts = imutils.grab_contours(cnts)
         self.locs = []
-        # 
         # # loop over the contours
         for (i, c) in enumerate(cnts):
-        	# compute the bounding box of the contour, then use the
-        	# bounding box coordinates to derive the aspect ratio
-        	(x, y, w, h) = cv2.boundingRect(c)
-        	self.locs.append((x, y, w, h))
+            # compute the bounding box of the contour, then use the
+            # bounding box coordinates to derive the aspect ratio
+            (x, y, w, h) = cv2.boundingRect(c)
+            if w < 10 or h < 10:
+                continue
+            self.locs.append((x, y, w, h))
         
         # sort the digit locations from left-to-right, then initialize the
         # list of classified digits
@@ -81,11 +80,11 @@ class DigitTemplate:
                 (x, y, w, h) = cv2.boundingRect(c)
                 roi = ref[y:y + h, x:x + w]
                 roi = cv2.resize(roi, (roi_width, roi_height))
+
                 
                 # update the references dictionary/ TODO should be prob just
                 # changed to and array
                 self.templates.append(roi)
-        print("Created " + str(len(self.templates)) + " for digit " + str(self.digit))
 
     def compare_against_roi(self, roi):
         # initialize a list of template matching scores	
@@ -138,12 +137,14 @@ def match_digits_with_img(digits, img):
         score_digit = max(scores_dict, key=scores_dict.get)
         # the classification for the digit ROI will be the reference
         # digit name with the *largest* template matching score
-        if scores_dict[score_digit] < 40.0:
+        if scores_dict[score_digit] < 35.0 or avg_dict[score_digit] < 15.0:
             continue
-        if avg_dict[score_digit] < 10.0:
-            continue
+
+        print()
         print(digit, avg_dict)
         print(score_digit, scores_dict)
+#        cv2.imshow("Image", roi)
+#        cv2.waitKey(0)
         output.append(str(score_digit))
         
         # draw the digit classifications around the group
