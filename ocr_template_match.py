@@ -78,6 +78,8 @@ class DigitTemplate:
                 # compute the bounding box for the digit, extract it, and resize
                 # it to a fixed size
                 (x, y, w, h) = cv2.boundingRect(c)
+                if w < 10 or h < 10:
+                    continue
                 roi = ref[y:y + h, x:x + w]
                 roi = cv2.resize(roi, (roi_width, roi_height))
 
